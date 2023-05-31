@@ -12,12 +12,12 @@ def check_deliver(url: str):
     return ""
 
 
-def get_dishes(restaurant_page_url: str) -> list[Dish]:
+def get_dishes(restaurant_page_url: str) -> tuple[list[Dish], Exception]:
     deliver_name = check_deliver(restaurant_page_url)
     if deliver_name == "":
-        raise Exception("No deliver")
+        return [], Exception("no deliver")
     value = strategy.get(deliver_name)
     if value is None:
-        raise Exception("No such deliver")
+        return [], Exception("strategy.get error")
 
-    return strategy[deliver_name](restaurant_page_url)
+    return strategy[deliver_name](restaurant_page_url), None
