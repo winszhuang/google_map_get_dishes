@@ -1,4 +1,6 @@
 from spider.spider import Spider
+import tools.wirte_file as wf
+import time
 
 driver_path = "D:/chromedriver_win32/chromedriver.exe"
 
@@ -11,6 +13,13 @@ url_list = [
 ]
 
 if __name__ == "__main__":
+    start = time.time()
     spider = Spider(driver_path)
-    for url in url_list:
-        spider.scrape_dishes(url)
+    for index, url in enumerate(url_list):
+        dishes, err = spider.scrape_dishes(url)
+        if err:
+            print(err)
+        else:
+            wf.write(f"dishes_{index}.json", str(dishes))
+    end = time.time()
+    print("執行時間：%f 秒" % (end - start))
