@@ -1,4 +1,6 @@
-from spider.spider import Spider
+from concurrent.futures import ThreadPoolExecutor
+import json
+from spider.spider import DishesSpider
 import tools.wirte_file as wf
 import time
 
@@ -12,14 +14,29 @@ url_list = [
     "https://www.google.com.tw/maps/place/%E6%A8%82%E5%A5%BD%E5%91%B3%E6%B6%BC%E9%BA%B5%E5%B0%8F%E9%A4%A8/@24.1716617,120.6736783,21z/data=!3m1!5s0x346917d119f27e39:0x68b3d48e054b56b5!4m14!1m7!3m6!1s0x3469175c40b583a5:0x2fafe51d9c6a35de!2z5YiB5rCRLemFuOiPnOmtmiDltIflvrflupc!8m2!3d24.1670963!4d120.6848373!16s%2Fg%2F11qm37nh6j!3m5!1s0x3469171d74f24649:0x1c165ff5b2f63a6c!8m2!3d24.1716743!4d120.6739409!16s%2Fg%2F11sqh57nfk?entry=ttu"
 ]
 
+spider = DishesSpider(driver_path)
+
+
+def scrape_dishes(url):
+    dishes, err = spider.scrape_dishes(url)
+    time.sleep(1)
+    if err:
+        print(err)
+    else:
+        print("--------" + url)
+        for dish in dishes:
+            print("--")
+            print(dish.__dict__)
+        wf.write(f"dishes_{url_list.index(url)}.json",
+                 json.dumps(dishes.__dict__))
+
+
 if __name__ == "__main__":
     start = time.time()
-    spider = Spider(driver_path)
-    for index, url in enumerate(url_list):
-        dishes, err = spider.scrape_dishes(url)
-        if err:
-            print(err)
-        else:
-            wf.write(f"dishes_{index}.json", str(dishes))
+
+    max_workers = 5
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        executor.map(scrape_dishes, url_list)
+
     end = time.time()
     print("執行時間：%f 秒" % (end - start))

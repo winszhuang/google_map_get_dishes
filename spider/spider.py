@@ -1,3 +1,4 @@
+import threading
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,36 +7,42 @@ from model.dish import Dish
 import delivers.delivers as delivers
 
 
-class Spider:
+class DishesSpider:
+
+    _thread_local = threading.local()
+
+    @classmethod
+    def get_driver(cls, chrome_driver_path):
+        if not hasattr(cls._thread_local, "driver"):
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_experimental_option("excludeSwitches",
+                                                   ["enable-automation"])
+            # chrome_options.add_experimental_option('useAutomationExtension', False)
+            prefs = {"profile.default_content_setting_values.notifications": 2}
+            chrome_options.add_experimental_option("prefs", prefs)
+            chrome_options.add_argument('Referer=https://www.google.com.tw/')
+            chrome_options.add_argument(
+                'Sec-Ch-Ua="Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"'
+            )
+            chrome_options.add_argument(
+                'Accept-Language=zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7')
+            chrome_options.add_argument('Accept-Encoding=gzip, deflate, br')
+            chrome_options.add_argument('Sec-Ch-Ua-Platform="Windows"')
+            chrome_options.add_argument(
+                'Accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+            )
+            chrome_options.add_argument('Cache-Control=max-age=0')
+            chrome_options.add_argument(
+                'User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+            )
+
+            driver = webdriver.Chrome(chrome_driver_path,
+                                      options=chrome_options)
+            cls._thread_local.driver = driver
+        return cls._thread_local.driver
 
     def __init__(self, chrome_driver_path):
-        self.driver = self.init_chrome_driver(chrome_driver_path)
-
-    def init_chrome_driver(self, chrome_driver_path):
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_experimental_option("excludeSwitches",
-                                               ["enable-automation"])
-        # chrome_options.add_experimental_option('useAutomationExtension', False)
-        prefs = {"profile.default_content_setting_values.notifications": 2}
-        chrome_options.add_experimental_option("prefs", prefs)
-        chrome_options.add_argument('Referer=https://www.google.com.tw/')
-        chrome_options.add_argument(
-            'Sec-Ch-Ua="Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"'
-        )
-        chrome_options.add_argument(
-            'Accept-Language=zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7')
-        chrome_options.add_argument('Accept-Encoding=gzip, deflate, br')
-        chrome_options.add_argument('Sec-Ch-Ua-Platform="Windows"')
-        chrome_options.add_argument(
-            'Accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
-        )
-        chrome_options.add_argument('Cache-Control=max-age=0')
-        chrome_options.add_argument(
-            'User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-        )
-
-        driver = webdriver.Chrome(chrome_driver_path, options=chrome_options)
-        return driver
+        self.driver = self.get_driver(chrome_driver_path)
 
     def find_deliver_link(self):
         foodpandaUrl = self.driver.find_element(
